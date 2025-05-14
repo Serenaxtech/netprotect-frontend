@@ -15,9 +15,13 @@ export function useAuthCheck({ allowedRoles = [] }: UseAuthCheckProps = {}) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const checkAuth = async () => {
       try {
         const data = await AuthService.checkAuth();
+        if (!isMounted) return;
+
         if (!data) {
           router.push('/login');
           return;
@@ -31,14 +35,22 @@ export function useAuthCheck({ allowedRoles = [] }: UseAuthCheckProps = {}) {
         setUserData(data);
         setIsAuthorized(true);
       } catch (error) {
-        router.push('/login');
+        if (isMounted) {
+          router.push('/login');
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     checkAuth();
-  }, [router, allowedRoles]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array since we only want this to run once
 
   return { isAuthorized, isLoading, userData };
 }
