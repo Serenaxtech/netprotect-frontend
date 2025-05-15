@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AuthService } from "@/services/authService"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, Home, Users, Settings, LogOut, Building, PlusCircle, Shield } from "lucide-react"
+import { ChevronLeft, ChevronRight, Home, Users, Settings, LogOut, Building, PlusCircle, Shield, AlertTriangle } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { useOrganizationCreation } from "@/hooks/useOrganizationCreation"
 import CreateOrganizationPage from '../organizations/create/page';
 import CreateAgentPage from '../agents/create/page';
+import VulnerabilityPage from '../vulnerability/ftp/page';
+import KerberosPage from '../vulnerability/kerberos/page';
 
 interface UserData {
   role?: string;
@@ -18,7 +20,8 @@ interface UserData {
   lastName?: string;
 }
 
-type View = 'dashboard' | 'create-organization' | 'users' | 'settings' | 'create-agent';
+// Update the View type
+type View = 'dashboard' | 'create-organization' | 'users' | 'settings' | 'create-agent' | 'vulnerability-ftp' | 'vulnerability-kerberos';
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -65,10 +68,14 @@ export default function DashboardPage() {
     setSidebarExpanded(!sidebarExpanded)
   }
 
-
   
+  // Update the renderMainContent function to include the vulnerability view
   const renderMainContent = () => {
     switch (currentView) {
+      case 'vulnerability-ftp':
+        return <VulnerabilityPage />;
+      case 'vulnerability-kerberos':
+        return <KerberosPage />;
       case 'create-organization':
         return <CreateOrganizationPage />;
       case 'create-agent':
@@ -210,6 +217,25 @@ return (
             <Settings size={20} />
             {sidebarExpanded && <span className="ml-3">Settings</span>}
           </Button>
+          <div className="flex flex-col space-y-2">
+            <Button 
+              variant="ghost" 
+              className={`flex items-center justify-${sidebarExpanded ? 'start' : 'center'} text-gray-300 hover:text-white hover:bg-[#1A1A1A] w-full`}
+              onClick={() => setCurrentView('vulnerability-ftp')}
+            >
+              <AlertTriangle size={20} />
+              {sidebarExpanded && <span className="ml-3">FTP Vulnerabilities</span>}
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              className={`flex items-center justify-${sidebarExpanded ? 'start' : 'center'} text-gray-300 hover:text-white hover:bg-[#1A1A1A] w-full`}
+              onClick={() => setCurrentView('vulnerability-kerberos')}
+            >
+              <AlertTriangle size={20} />
+              {sidebarExpanded && <span className="ml-3">Kerberos Vulnerabilities</span>}
+            </Button>
+        </div>
         </div>
       </div>
       
