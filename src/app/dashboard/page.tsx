@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AuthService } from "@/services/authService"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, Home, Users, Settings, LogOut, Building, PlusCircle, Shield, AlertTriangle } from "lucide-react"
+import { ChevronLeft, ChevronRight, Home, Users, Settings, LogOut, Building, PlusCircle, Shield, AlertTriangle, UserCog, Users2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { useOrganizationCreation } from "@/hooks/useOrganizationCreation"
@@ -13,6 +13,9 @@ import CreateOrganizationPage from '../organizations/create/page';
 import CreateAgentPage from '../agents/create/page';
 import VulnerabilityPage from '../vulnerability/ftp/page';
 import KerberosPage from '../vulnerability/kerberos/page';
+import ListAgentsPage from '../agents/list/page';
+import ListOrganizationsPage from '../organizations/list/page';
+import OrganizationDetailsPage from '../organizations/[id]/page';
 
 interface UserData {
   role?: string;
@@ -21,7 +24,7 @@ interface UserData {
 }
 
 // Update the View type
-type View = 'dashboard' | 'create-organization' | 'users' | 'settings' | 'create-agent' | 'vulnerability-ftp' | 'vulnerability-kerberos';
+type View = 'dashboard' | 'create-organization' | 'users' | 'settings' | 'create-agent' | 'list-agents' | 'vulnerability-ftp' | 'vulnerability-kerberos' | 'list-organizations' | 'organization-details';
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -29,25 +32,66 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [sidebarExpanded, setSidebarExpanded] = useState(true)
   const [currentView, setCurrentView] = useState<View>('dashboard')
-  
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const data = await AuthService.checkAuth()
-        if (!data) {
-          router.push('/login')
-          return
-        }
-        setUserData(data)
-      } catch (error) {
-        router.push('/login')
-      } finally {
-        setLoading(false)
-      }
-    }
+  const [agentsMenuOpen, setAgentsMenuOpen] = useState(false);
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
 
-    checkAuth()
-  }, [router])
+  
+  const toggleAgentsMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setAgentsMenuOpen(!agentsMenuOpen);
+  };
+
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.agents-menu-container')) {
+          setAgentsMenuOpen(false);
+        }
+      };
+
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }, []);
+
+  const [organizationsMenuOpen, setOrganizationsMenuOpen] = useState(false);
+
+  const toggleOrganizationsMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setOrganizationsMenuOpen(!organizationsMenuOpen);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.organizations-menu-container')) {
+        setOrganizationsMenuOpen(false);
+      }
+    };
+  
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+    useEffect(() => {
+      const checkAuth = async () => {
+        try {
+          const data = await AuthService.checkAuth()
+          if (!data) {
+            router.push('/login')
+            return
+          }
+          setUserData(data)
+        } catch (error) {
+          router.push('/login')
+        } finally {
+          setLoading(false)
+        }
+      }
+  
+      checkAuth()
+    }, [router])
 
   const handleLogout = async () => {
     try {
@@ -69,17 +113,50 @@ export default function DashboardPage() {
   }
 
   
+  
   // Update the renderMainContent function to include the vulnerability view
   const renderMainContent = () => {
     switch (currentView) {
       case 'vulnerability-ftp':
         return <VulnerabilityPage />;
+
       case 'vulnerability-kerberos':
         return <KerberosPage />;
+
       case 'create-organization':
         return <CreateOrganizationPage />;
+
       case 'create-agent':
         return <CreateAgentPage />;
+
+      case 'list-agents':
+        return <ListAgentsPage />;
+        
+        case 'list-organizations':
+          return <ListOrganizationsPage onSelectOrg={(orgId) => {
+            setSelectedOrgId(orgId);
+            setCurrentView('organization-details');
+          }} />;
+    
+        case 'organization-details':
+          return selectedOrgId ? (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between mb-6">
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setCurrentView('list-organizations');
+                    setSelectedOrgId(null);
+                  }}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  Back to Organizations
+                </Button>
+              </div>
+              <OrganizationDetailsPage organizationId={selectedOrgId} />
+            </div>
+          ) : null;
       case 'dashboard':
       default:
         return (
@@ -173,34 +250,111 @@ return (
           
           {userData?.role === 'root' && (
             <>
-              <div className={`flex items-center mt-4 mb-2 ${sidebarExpanded ? 'justify-start' : 'justify-center'}`}>
-                {sidebarExpanded ? (
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Organizations</span>
-                ) : (
-                  <Building size={16} className="text-gray-500" />
-                )}
+              <div className="organizations-menu-container relative">
+                <Button 
+                  variant="ghost" 
+                  className={`flex items-center justify-${sidebarExpanded ? 'start' : 'center'} text-gray-300 hover:text-white hover:bg-[#1A1A1A] w-full`}
+                  onClick={toggleOrganizationsMenu}
+                >
+                  <Building size={20} />
+                  {sidebarExpanded && (
+                    <>
+                      <span className="ml-3">Organizations</span>
+                      <ChevronRight
+                        size={16}
+                        className={`ml-auto transition-transform ${organizationsMenuOpen ? 'rotate-90' : ''}`}
+                      />
+                    </>
+                  )}
+                </Button>
+                
+                {/* Organizations Submenu */}
+                <div
+                  className={`absolute left-full top-0 ml-2 bg-[#1A1A1A] border border-gray-800 rounded-md overflow-hidden transition-all duration-200 ${organizationsMenuOpen ? 'visible opacity-100 translate-x-0' : 'invisible opacity-0 -translate-x-2'}`}
+                  style={{ zIndex: 50 }}
+                >
+                  <div className="py-2">
+                    <Button
+                      variant="ghost"
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-[#252525]"
+                      onClick={() => {
+                        setCurrentView('create-organization');
+                        setOrganizationsMenuOpen(false);
+                      }}
+                    >
+                      <PlusCircle size={18} className="mr-2" />
+                      Create Organization
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-[#252525]"
+                      onClick={() => {
+                        setCurrentView('list-organizations');
+                        setOrganizationsMenuOpen(false);
+                      }}
+                    >
+                      <Building size={18} className="mr-2" />
+                      List Organizations
+                    </Button>
+                  </div>
+                </div>
               </div>
-              
-              <Button 
-                variant="ghost" 
-                className={`flex items-center justify-${sidebarExpanded ? 'start' : 'center'} text-gray-300 hover:text-white hover:bg-[#1A1A1A] w-full`}
-                onClick={() => setCurrentView('create-organization')}
-              >
-                <PlusCircle size={20} />
-                {sidebarExpanded && <span className="ml-3">Create Organization</span>}
-              </Button>
             </>
           )}
           
           {(userData?.role === 'root' || userData?.role === 'integrator') && (
-            <Button
-              variant="ghost"
-              className={`w-full justify-start gap-2 ${currentView === 'create-agent' ? 'bg-gray-800' : ''}`}
-              onClick={() => setCurrentView('create-agent')}
-            >
-              <Shield className="h-5 w-5" />
-              {sidebarExpanded && 'Create Agent'}
-            </Button>
+            <div className="relative agents-menu-container">
+                <Button 
+                  variant="ghost" 
+                  className={`w-full flex items-center justify-${sidebarExpanded ? 'start' : 'center'} text-gray-300 hover:text-white hover:bg-[#1A1A1A] ${agentsMenuOpen ? 'bg-[#1A1A1A] text-white' : ''}`}
+                  onClick={toggleAgentsMenu}
+                  aria-expanded={agentsMenuOpen}
+                  aria-haspopup="true"
+                >
+                  <UserCog size={20} />
+                  {sidebarExpanded && <span className="ml-3">Agents</span>}
+                </Button>
+                
+                <div 
+                  className={`
+                    absolute ${sidebarExpanded ? 'left-full' : 'left-full'} top-0
+                    w-48 bg-[#1A1A1A] border border-gray-800 rounded-md shadow-lg
+                    transform transition-all duration-200 ease-in-out
+                    ${agentsMenuOpen ? 'translate-x-0 opacity-100 visible' : 'translate-x-1 opacity-0 invisible'}
+                    z-50
+                  `}
+                  role="menu"
+                  aria-orientation="vertical"
+                  aria-labelledby="agents-menu-button"
+                >
+                  <div className="py-2" role="none">
+                    <Button
+                      variant="ghost"
+                      className="w-full flex items-center px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-[#252525] transition-colors duration-150"
+                      onClick={() => {
+                        setCurrentView('create-agent');
+                        setAgentsMenuOpen(false);
+                      }}
+                      role="menuitem"
+                    >
+                      <PlusCircle size={18} className="mr-2" />
+                      Create Agent
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full flex items-center px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-[#252525] transition-colors duration-150"
+                      onClick={() => {
+                        setCurrentView('list-agents');
+                        setAgentsMenuOpen(false);
+                      }}
+                      role="menuitem"
+                    >
+                      <Users2 size={18} className="mr-2" />
+                      List Agents
+                    </Button>
+                  </div>
+                </div>
+              </div>
           )}
           <Button 
             variant="ghost" 

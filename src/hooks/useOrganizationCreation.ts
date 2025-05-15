@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { OrganizationApiService, OrganizationCreateData } from '@/services/api/organizationApi';
+import { OrganizationApiService, OrganizationUpdateData as OrganizationCreateData } from '@/services/api/organizationApi';
 
 interface UseOrganizationCreationReturn {
   isLoading: boolean;
@@ -17,7 +17,7 @@ export function useOrganizationCreation(): UseOrganizationCreationReturn {
       setIsLoading(true);
       setError(null);
 
-      await OrganizationApiService.createOrganization(data);
+      await OrganizationApiService.updateOrganization(data);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
