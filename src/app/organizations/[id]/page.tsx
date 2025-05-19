@@ -17,7 +17,7 @@ import { Organization } from '@/services/api/organizationApi';
 import { AgentApiService } from '@/services/api/agentApi';
 import { AgentDetails } from '@/services/api/agentApi';
 
-export default function OrganizationDetailsPage({ organizationId }: { organizationId: string }) {
+export default function OrganizationDetailsPage({ organizationId, onAgentSelect }: { organizationId: string; onAgentSelect?: (agentId: string) => void; }) {
   const router = useRouter();
   const { isAuthorized, isLoading: authLoading } = useAuthCheck({ allowedRoles: ['root'] });
   const { organizations, loading, error, updateOrganization, deleteOrganization } = useOrganizationList();
@@ -229,7 +229,11 @@ export default function OrganizationDetailsPage({ organizationId }: { organizati
                 </thead>
                 <tbody>
                   {agents.map((agent) => (
-                    <tr key={agent.agent_id} className="border-b border-gray-800 hover:bg-[#1A1A1A]">
+                    <tr 
+                      key={agent.agent_id} 
+                      className="border-b border-gray-800 hover:bg-[#1A1A1A] cursor-pointer"
+                      onClick={() => onAgentSelect?.(agent.agent_id)}
+                    >
                       <td className="px-4 py-3">{agent.agent_name}</td>
                       <td className="px-4 py-3 font-mono text-sm">{agent.agent_id}</td>
                       <td className="px-4 py-3">
@@ -246,7 +250,7 @@ export default function OrganizationDetailsPage({ organizationId }: { organizati
                         {new Date(agent.agent_last_connection).toLocaleString()}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <div className="flex justify-center space-x-2">
+                        <div className="flex justify-center space-x-2" onClick={(e) => e.stopPropagation()}>
                           <Button
                             variant="ghost"
                             size="sm"

@@ -16,6 +16,7 @@ import KerberosPage from '../vulnerability/kerberos/page';
 import ListAgentsPage from '../agents/list/page';
 import ListOrganizationsPage from '../organizations/list/page';
 import OrganizationDetailsPage from '../organizations/[id]/page';
+import AgentDetailsPage from '../agents/[id]/page';
 
 interface UserData {
   role?: string;
@@ -24,7 +25,7 @@ interface UserData {
 }
 
 // Update the View type
-type View = 'dashboard' | 'create-organization' | 'users' | 'settings' | 'create-agent' | 'list-agents' | 'vulnerability-ftp' | 'vulnerability-kerberos' | 'list-organizations' | 'organization-details';
+type View = 'dashboard' | 'create-organization' | 'users' | 'settings' | 'create-agent' | 'list-agents' | 'agent-details' | 'vulnerability-ftp' | 'vulnerability-kerberos' | 'list-organizations' | 'organization-details' ;
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -34,6 +35,7 @@ export default function DashboardPage() {
   const [currentView, setCurrentView] = useState<View>('dashboard')
   const [agentsMenuOpen, setAgentsMenuOpen] = useState(false);
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
 
   
   const toggleAgentsMenu = (e: React.MouseEvent) => {
@@ -154,9 +156,34 @@ export default function DashboardPage() {
                   Back to Organizations
                 </Button>
               </div>
-              <OrganizationDetailsPage organizationId={selectedOrgId} />
+              <OrganizationDetailsPage 
+                organizationId={selectedOrgId} 
+                onAgentSelect={(agentId) => {
+                  setSelectedAgentId(agentId);
+                  setCurrentView('agent-details');
+                }}
+              />
             </div>
           ) : null;
+      case 'agent-details':
+        return selectedAgentId ? (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between mb-6">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setCurrentView('organization-details');
+                  setSelectedAgentId(null);
+                }}
+                className="text-gray-400 hover:text-white"
+              >
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Back to Organization
+              </Button>
+            </div>
+            <AgentDetailsPage agentId={selectedAgentId} />
+          </div>
+        ) : null;
       case 'dashboard':
       default:
         return (
@@ -311,8 +338,16 @@ return (
                   aria-expanded={agentsMenuOpen}
                   aria-haspopup="true"
                 >
-                  <UserCog size={20} />
-                  {sidebarExpanded && <span className="ml-3">Agents</span>}
+                  <Users2 size={20} />
+                  {sidebarExpanded && (
+                    <>
+                      <span className="ml-3">Agents</span>
+                      <ChevronRight
+                        size={16}
+                        className={`ml-auto transition-transform ${agentsMenuOpen ? 'rotate-90' : ''}`}
+                      />
+                    </>
+                  )}
                 </Button>
                 
                 <div 
