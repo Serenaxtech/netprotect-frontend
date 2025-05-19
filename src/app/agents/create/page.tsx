@@ -29,8 +29,9 @@ export default function CreateAgentPage() {
   useEffect(() => {
     const fetchOrganizations = async () => {
       try {
-        const result = await OrganizationApiService.getAllOrganizations();
-        setOrganizations(result.organizations || []);
+        const organizations = await OrganizationApiService.getAllOrganizations();
+        //console.log('Organizations:', organizations);
+        setOrganizations(organizations || []);
       } catch (error) {
         console.error('Failed to fetch organizations:', error);
         toast.error('Error', {

@@ -153,16 +153,16 @@ export default function ListOrganizationsPage({ onSelectOrg }: ListOrganizations
                 <div className="space-y-2">
                   <label className="text-sm text-gray-400">Organization Name</label>
                   <Input
-                    value={editForm.organizationName}
-                    onChange={(e) => setEditForm({ ...editForm, organizationName: e.target.value })}
+                    value={editForm.organization_name}
+                    onChange={(e) => setEditForm({ ...editForm, organization_name: e.target.value })}
                     className="bg-[#1A1A1A] border-gray-800 text-white"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm text-gray-400">Admin Email</label>
                   <Input
-                    value={editForm.adminEmail}
-                    onChange={(e) => setEditForm({ ...editForm, adminEmail: e.target.value })}
+                    value={editForm.admin_email}
+                    onChange={(e) => setEditForm({ ...editForm, admin_email: e.target.value })}
                     className="bg-[#1A1A1A] border-gray-800 text-white"
                   />
                 </div>

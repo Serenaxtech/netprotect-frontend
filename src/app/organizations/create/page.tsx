@@ -24,7 +24,10 @@ export default function CreateOrganizationPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const success = await createOrganization(formData);
+      const success = await createOrganization({
+        organizationName: formData.organization_name,
+        adminEmail: formData.admin_email
+      });
       if (success) {
         toast.success("Organization created", {
           description: "The organization has been created successfully."

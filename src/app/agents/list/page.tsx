@@ -179,20 +179,34 @@ export default function ListAgentsPage() {
                 className="bg-[#1A1A1A] border-gray-800 text-white"
               />
             </div>
-            <div className="space-y-2">
+            <div className="flex items-center justify-between">
               <label className="text-sm text-gray-400">Status</label>
-              <Input
-                value={editForm.agent_state}
-                onChange={(e) => setEditForm({ ...editForm, agent_state: e.target.value })}
-                className="bg-[#1A1A1A] border-gray-800 text-white"
-              />
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-400">
+                  {editForm.agent_state === 'active' ? 'Active' : 'Inactive'}
+                </span>
+                <Switch
+                  checked={editForm.agent_state === 'active'}
+                  onCheckedChange={(checked) => 
+                    setEditForm({ 
+                      ...editForm, 
+                      agent_state: checked ? 'active' : 'inactive' 
+                    })
+                  }
+                />
+              </div>
             </div>
             <div className="flex items-center justify-between">
               <label className="text-sm text-gray-400">Remote Configuration</label>
-              <Switch
-                checked={editForm.agent_remote_config}
-                onCheckedChange={(checked) => setEditForm({ ...editForm, agent_remote_config: checked })}
-              />
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-400">
+                  {editForm.agent_remote_config ? 'Enabled' : 'Disabled'}
+                </span>
+                <Switch
+                  checked={editForm.agent_remote_config}
+                  onCheckedChange={(checked) => setEditForm({ ...editForm, agent_remote_config: checked })}
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>
