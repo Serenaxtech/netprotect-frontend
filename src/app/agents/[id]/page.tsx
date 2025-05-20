@@ -9,7 +9,10 @@ import { useAgentDetails } from '@/hooks/useAgentDetails';
 import { useState } from 'react';
 import { ConfigEditor } from '@/components/ConfigEditor';
 
-export default function AgentDetailsPage({ agentId }: { agentId: string }) {
+export default function AgentDetailsPage() {
+  const params = useParams();
+  const agentId = params.id as string;
+  
   const { isAuthorized, isLoading: authLoading } = useAuthCheck({ allowedRoles: ['root', 'integrator'] });
   const { agent, loading, error } = useAgentDetails(agentId);
   const [showConfigEditor, setShowConfigEditor] = useState(false);
