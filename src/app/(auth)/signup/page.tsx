@@ -17,6 +17,15 @@ import { useUserCreation } from "@/hooks/useUserCreation"
 import { useOrganizations } from "@/hooks/useOrganizations"
 import { toast } from "sonner"
 import { AuthService } from "@/services/authService"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Badge } from "@/components/ui/badge"
 
 // Define all possible user types
 const userTypes = [
@@ -80,12 +89,22 @@ export default function SignupPage() {
     }))
   }
 
+  const [selectedOrgs, setSelectedOrgs] = useState<string[]>([])
+
   // Update the handleOrganizationChange function
-  const handleOrganizationChange = (value: string) => {
-    // console.log('Selected organization:', value);
+  const handleOrganizationChange = (orgId: string) => {
+    let newSelected: string[]
+    if (userType === 'integrator') {
+      newSelected = selectedOrgs.includes(orgId)
+        ? selectedOrgs.filter(id => id !== orgId)
+        : [...selectedOrgs, orgId]
+    } else {
+      newSelected = [orgId]
+    }
+    setSelectedOrgs(newSelected)
     setFormData(prev => ({
       ...prev,
-      organizations: [value]
+      organizations: newSelected
     }))
   }
 
@@ -117,31 +136,35 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black">
-      <Card className="w-full max-w-md bg-[#111] border-gray-800">
-        <CardHeader className="space-y-6">
-          <div className="text-gray-400 text-center">[ Create New User ]</div>
-          <CardTitle className="text-4xl font-bold text-center text-white">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-black to-gray-900 p-4">
+      <Card className="w-full max-w-md bg-[#111] border-gray-800 shadow-xl hover:shadow-2xl transition-shadow duration-300">
+        <CardHeader className="space-y-6 pb-8">
+          <div className="text-gray-400 text-center text-sm tracking-wider uppercase">[ Create New User ]</div>
+          <CardTitle className="text-4xl font-bold text-center text-white bg-clip-text bg-gradient-to-r from-blue-500 to-purple-500">
             Create User Account
           </CardTitle>
-          <p className="text-gray-400 text-center">
+          <p className="text-gray-400 text-center text-sm">
             Create a new user account with specified permissions
           </p>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-200">Account Type</label>
+              <label className="text-sm font-medium text-gray-200 block">Account Type</label>
               <Select 
                 onValueChange={value => setUserType(value as 'normal' | 'admin' | 'integrator')}
                 disabled={availableUserTypes.length === 1}
               >
-                <SelectTrigger className="bg-[#1A1A1A] border-gray-800 text-gray-300">
+                <SelectTrigger className="bg-[#1A1A1A] border-gray-800 text-gray-300 hover:bg-[#222] transition-colors">
                   <SelectValue placeholder="Select account type" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#1A1A1A] border-gray-800">
                   {availableUserTypes.map(type => (
-                    <SelectItem key={type.id} value={type.id} className="text-gray-300">
+                    <SelectItem 
+                      key={type.id} 
+                      value={type.id} 
+                      className="text-gray-300 hover:bg-[#222] cursor-pointer"
+                    >
                       {type.name}
                     </SelectItem>
                   ))}
@@ -149,39 +172,39 @@ export default function SignupPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-200">Username</label>
+              <label className="text-sm font-medium text-gray-200 block">Username</label>
               <Input
                 name="username"
                 type="text"
                 placeholder="Enter your username"
                 value={formData.username}
                 onChange={handleChange}
-                className="bg-[#1A1A1A] border-gray-800 text-gray-300 placeholder:text-gray-500"
+                className="bg-[#1A1A1A] border-gray-800 text-gray-300 placeholder:text-gray-500 hover:bg-[#222] focus:bg-[#222] transition-colors"
                 required
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-200">First Name</label>
+                <label className="text-sm font-medium text-gray-200 block">First Name</label>
                 <Input
                   name="firstname"
                   type="text"
                   placeholder="First name"
                   value={formData.firstname}
                   onChange={handleChange}
-                  className="bg-[#1A1A1A] border-gray-800 text-gray-300 placeholder:text-gray-500"
+                  className="bg-[#1A1A1A] border-gray-800 text-gray-300 placeholder:text-gray-500 hover:bg-[#222] focus:bg-[#222] transition-colors"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-200">Last Name</label>
+                <label className="text-sm font-medium text-gray-200 block">Last Name</label>
                 <Input
                   name="lastname"
                   type="text"
                   placeholder="Last name"
                   value={formData.lastname}
                   onChange={handleChange}
-                  className="bg-[#1A1A1A] border-gray-800 text-gray-300 placeholder:text-gray-500"
+                  className="bg-[#1A1A1A] border-gray-800 text-gray-300 placeholder:text-gray-500 hover:bg-[#222] focus:bg-[#222] transition-colors"
                   required
                 />
               </div>
@@ -212,35 +235,129 @@ export default function SignupPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-200">Organization</label>
-              <Select 
-                onValueChange={handleOrganizationChange}
-                disabled={isLoadingOrgs}
-              >
-                <SelectTrigger className="bg-[#1A1A1A] border-gray-800 text-gray-300">
-                  <SelectValue placeholder="Select organization" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#1A1A1A] border-gray-800">
-                  {isLoadingOrgs ? (
-                    <SelectItem value="loading" disabled className="text-gray-300">
-                      Loading organizations...
-                    </SelectItem>
-                  ) : organizations && organizations.length > 0 ? (
-                    organizations.map(org => (
-                      <SelectItem 
-                        key={org._id} 
-                        value={org._id}
-                        className="text-gray-300"
-                      >
-                        {org.organizationName}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="no-orgs" disabled className="text-gray-300">
-                      No organizations available
-                    </SelectItem>
+              {userType === 'integrator' ? (
+                <div className="relative">
+                  <Select 
+                    onValueChange={(value) => {
+                      const newSelected = selectedOrgs.includes(value)
+                        ? selectedOrgs.filter(id => id !== value)
+                        : [...selectedOrgs, value]
+                      setSelectedOrgs(newSelected)
+                      setFormData(prev => ({
+                        ...prev,
+                        organizations: newSelected
+                      }))
+                    }}
+                    value={selectedOrgs[selectedOrgs.length - 1] || ''}
+                    disabled={isLoadingOrgs}
+                  >
+                    <SelectTrigger className="bg-[#1A1A1A] border-gray-800 text-gray-300">
+                      <div className="flex flex-wrap gap-1">
+                        {selectedOrgs.length > 0 ? (
+                          selectedOrgs.map(orgId => {
+                            const org = organizations.find(o => o._id === orgId)
+                            return org && (
+                              <Badge key={orgId} variant="secondary" className="mr-1">
+                                {org.organizationName}
+                              </Badge>
+                            )
+                          })
+                        ) : (
+                          <span className="text-gray-500">Select organizations...</span>
+                        )}
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1A1A1A] border-gray-800">
+                      {isLoadingOrgs ? (
+                        <SelectItem value="loading" disabled className="text-gray-300">
+                          Loading organizations...
+                        </SelectItem>
+                      ) : organizations && organizations.length > 0 ? (
+                        organizations.map(org => (
+                          <SelectItem 
+                            key={org._id} 
+                            value={org._id}
+                            className="text-gray-300"
+                          >
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={selectedOrgs.includes(org._id)}
+                                readOnly
+                                className="h-4 w-4"
+                              />
+                              <span>{org.organizationName}</span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="no-orgs" disabled className="text-gray-300">
+                          No organizations available
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {selectedOrgs.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {selectedOrgs.map(orgId => {
+                        const org = organizations.find(o => o._id === orgId)
+                        return org && (
+                          <Badge 
+                            key={orgId} 
+                            variant="secondary"
+                            className="flex items-center gap-1"
+                          >
+                            {org.organizationName}
+                            <button
+                              onClick={() => {
+                                const newSelected = selectedOrgs.filter(id => id !== orgId)
+                                setSelectedOrgs(newSelected)
+                                setFormData(prev => ({
+                                  ...prev,
+                                  organizations: newSelected
+                                }))
+                              }}
+                              className="ml-1 hover:text-red-500"
+                            >
+                              ×
+                            </button>
+                          </Badge>
+                        )
+                      })}
+                    </div>
                   )}
-                </SelectContent>
-              </Select>
+                </div>
+              ) : (
+                <Select 
+                  onValueChange={value => handleOrganizationChange(value)}
+                  disabled={isLoadingOrgs}
+                >
+                  <SelectTrigger className="bg-[#1A1A1A] border-gray-800 text-gray-300">
+                    <SelectValue placeholder="Select organization" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#1A1A1A] border-gray-800">
+                    {isLoadingOrgs ? (
+                      <SelectItem value="loading" disabled className="text-gray-300">
+                        Loading organizations...
+                      </SelectItem>
+                    ) : organizations && organizations.length > 0 ? (
+                      organizations.map(org => (
+                        <SelectItem 
+                          key={org._id} 
+                          value={org._id}
+                          className="text-gray-300"
+                        >
+                          {org.organizationName}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-orgs" disabled className="text-gray-300">
+                        No organizations available
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
               {orgsError && (
                 <p className="text-sm text-red-500">
                   {orgsError}
@@ -272,18 +389,12 @@ export default function SignupPage() {
               />
             </div>
             <Button 
-              type="submit"
-              className="w-full bg-red-600 hover:bg-red-700 text-white border-2 border-red-600 mt-6"
+              type="submit" 
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium py-2 rounded-lg transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isCreating}
             >
-              {isCreating ? 'Creating Account...' : 'Create Account'}
+              {isCreating ? "Creating Account..." : "Create Account"}
             </Button>
-            <div className="text-center text-sm text-gray-400">
-              Already have an account?{" "}
-              <Link href="/login" className="text-gray-300 hover:text-white">
-                Sign in
-              </Link>
-            </div>
           </form>
         </CardContent>
       </Card>

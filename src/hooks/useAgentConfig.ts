@@ -1,10 +1,25 @@
 import { useState, useEffect } from 'react';
 import { ConfigApiService, AgentConfig } from '@/services/api/configApi';
 
+export interface ConfigField {
+  key: string;
+  value: string;
+  isEditable: boolean;
+}
+
 export interface ConfigSection {
   name: string;
+  originalName: string;
   isEditable: boolean;
-  content: string;
+  isSectionNameEditable: boolean;
+  isQuerySection: boolean;
+  fields: ConfigField[];
+}
+
+interface ConfigLine {
+  key: string;
+  value: string;
+  isEditable: boolean;
 }
 
 export const useAgentConfig = (agentId: string, agentName: string) => {
@@ -17,7 +32,7 @@ export const useAgentConfig = (agentId: string, agentName: string) => {
     const lines = rawConfig.split('\n');
     const sections: ConfigSection[] = [];
     let currentSection: ConfigSection | null = null;
-
+  
     for (const line of lines) {
       if (line.trim().startsWith('[')) {
         if (currentSection) {
@@ -26,18 +41,28 @@ export const useAgentConfig = (agentId: string, agentName: string) => {
         const sectionName = line.trim();
         currentSection = {
           name: sectionName,
-          isEditable: !sectionName.includes('agent'),
-          content: line + '\n'
+          originalName: sectionName,
+          isEditable: true,
+          isSectionNameEditable: sectionName.startsWith('[query_') || sectionName === '[adlab.local]',
+          isQuerySection: sectionName.startsWith('[query_'),
+          fields: []
         };
-      } else if (currentSection) {
-        currentSection.content += line + '\n';
+      } else if (currentSection && line.trim()) {
+        const [key, value] = line.split('=').map(part => part.trim());
+        if (key && value !== undefined) {
+          let isEditable = true;
+          if (currentSection.name === '[agent]') {
+            isEditable = key === 'AUTH-Token';
+          }
+          currentSection.fields.push({ key, value, isEditable });
+        }
       }
     }
-
+  
     if (currentSection) {
       sections.push(currentSection);
     }
-
+  
     return sections;
   };
 
@@ -68,7 +93,7 @@ export const useAgentConfig = (agentId: string, agentName: string) => {
         const initialConfig = `[agent]
 Agent-ID = ${agentId}
 Agent-Name = ${agentName}
-AUTH-Token = undefined
+AUTH-Token = REDACTED
 
 [backend-api]
 base-api = http://localhost:5000
@@ -128,12 +153,16 @@ base=`;
   const updateConfig = async (newSections: ConfigSection[]) => {
     try {
       setLoading(true);
-      const rawConfig = newSections.map(section => section.content.trim()).join('\n\n');
+      const rawConfig = newSections.map(section => {
+        const fields = section.fields.map(field => `${field.key} = ${field.value}`).join('\n');
+        return `${section.name}\n${fields}`;
+      }).join('\n\n');
       await ConfigApiService.updateAgentConfig(agentId, rawConfig);
       await fetchConfig();
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
+        throw err; // Re-throw to handle in the component
       }
     } finally {
       setLoading(false);

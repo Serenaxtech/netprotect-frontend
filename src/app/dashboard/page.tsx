@@ -341,8 +341,8 @@ return (
               </div>
             </>
           )}
-          
-          { userData?.role === 'root' || userData?.role === 'integrator' && (
+
+          { (userData?.role === 'root' || userData?.role === 'integrator') && (
             <div className="relative agents-menu-container">
                 <Button 
                   variant="ghost" 
