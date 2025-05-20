@@ -1,40 +1,24 @@
 import { useState } from 'react';
 import { AgentApiService, AgentCreateData } from '@/services/api/agentApi';
 
-interface UseAgentCreationReturn {
-  isLoading: boolean;
-  error: string | null;
-  createAgent: (data: AgentCreateData) => Promise<boolean>;
-  clearError: () => void;
-}
-
-export function useAgentCreation(): UseAgentCreationReturn {
+export function useAgentCreation() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createAgent = async (data: AgentCreateData): Promise<boolean> => {
+  const createAgent = async (data: AgentCreateData) => {
+    setIsLoading(true);
+    setError(null);
     try {
-      setIsLoading(true);
-      setError(null);
-
-      const createdAgent = await AgentApiService.createAgent(data);
-      await AgentApiService.addAgentToOrganization(data.agent_organization, createdAgent.agent_id);
-
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-      return false;
-    } finally {
+      const response = await AgentApiService.createAgent(data);
       setIsLoading(false);
+      return { success: true, data: response };
+    } catch (err) {
+      setIsLoading(false);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create agent';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
     }
   };
 
-  const clearError = () => setError(null);
-
-  return {
-    isLoading,
-    error,
-    createAgent,
-    clearError,
-  };
+  return { createAgent, isLoading, error };
 }

@@ -20,19 +20,21 @@ export interface OrganizationCreateData {
 }
 
 export class OrganizationApiService {
-  static async getAllOrganizations(): Promise<Organization[]> {
-    const response = await fetch(`${API_BASE_URL}/organization/all`);
+  static async getAllOrganizations(isRoot: boolean = false): Promise<Organization[]> {
+    const endpoint = isRoot ? '/organization/all' : '/user/organizations';
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, { credentials: 'include' } );
     if (!response.ok) {
       throw new Error('Failed to fetch organizations');
     }
     const data = await response.json();
-    return data.organizations;
+    return isRoot ? data.organizations : data;
   }
 
   static async createOrganization(orgData: OrganizationCreateData): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/organization/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({
         "organization_name": orgData.organizationName,
         "admin_email": orgData.adminEmail
@@ -47,6 +49,7 @@ export class OrganizationApiService {
   static async updateOrganization(orgId: string, updateData: OrganizationUpdateData): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/organization/${orgId}`, {
       method: 'PUT',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updateData)
     });
@@ -58,7 +61,8 @@ export class OrganizationApiService {
 
   static async deleteOrganization(orgId: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/organization/${orgId}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      credentials: 'include'
     });
     
     if (!response.ok) {

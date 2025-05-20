@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { UserApiService, UserCreateData } from '@/services/api/userApi';
+import { UserApi, UserCreateData } from '@/services/api/userApi';
+import { User } from 'lucide-react';
 
 interface UseUserCreationReturn {
   isLoading: boolean;
@@ -17,7 +18,7 @@ export function useUserCreation(): UseUserCreationReturn {
       setIsLoading(true);
       setError(null);
 
-      const result = await UserApiService.createUser(userData, userType);
+      const result = await UserApi.createUser(userData, userType);
 
       if (!result.success) {
         setError(result.error);

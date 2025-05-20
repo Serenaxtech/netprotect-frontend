@@ -15,9 +15,41 @@ export interface UserResponse {
   message: string;
 }
 
-export class UserApiService {
-  private static readonly BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
-  private static readonly USER_ENDPOINT = `${UserApiService.BASE_URL}/user`;
+export interface User {
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  role: string;
+}
+
+export class UserApi {
+  private static readonly USER_ENDPOINT = `${process.env.NEXT_PUBLIC_API_URL}/user`;
+
+  static async getAllUsers(): Promise<ApiResponse<User[]>> {
+    try {
+      const response = await fetch(`${this.USER_ENDPOINT}/all`, {
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to fetch users');
+      }
+
+      return {
+        success: true,
+        data,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'An unknown error occurred',
+      };
+    }
+  }
 
   static async createUser(userData: UserCreateData, userType: 'normal' | 'integrator'): Promise<ApiResponse<UserResponse>> {
     try {
@@ -51,4 +83,5 @@ export class UserApiService {
       };
     }
   }
+
 }

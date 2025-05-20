@@ -6,17 +6,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AuthService } from "@/services/authService"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, Home, Users, Settings, LogOut, Building, PlusCircle, Shield, AlertTriangle, UserCog, Users2 } from "lucide-react"
-import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { useOrganizationCreation } from "@/hooks/useOrganizationCreation"
+import DashboardOverview from './overview/page';
 import CreateOrganizationPage from '../organizations/create/page';
 import CreateAgentPage from '../agents/create/page';
 import VulnerabilityPage from '../vulnerability/ftp/page';
 import KerberosPage from '../vulnerability/kerberos/page';
+import AdcsPage from '../vulnerability/adcs/page';
+import GroupsPage from '../vulnerability/groups/page';
 import ListAgentsPage from '../agents/list/page';
 import ListOrganizationsPage from '../organizations/list/page';
 import OrganizationDetailsPage from '../organizations/[id]/page';
 import AgentDetailsPage from '../agents/[id]/page';
+import UsersListPage from '../users/list/page';
 
 interface UserData {
   role?: string;
@@ -25,7 +28,7 @@ interface UserData {
 }
 
 // Update the View type
-type View = 'dashboard' | 'create-organization' | 'users' | 'settings' | 'create-agent' | 'list-agents' | 'agent-details' | 'vulnerability-ftp' | 'vulnerability-kerberos' | 'list-organizations' | 'organization-details' ;
+type View = 'dashboard' | 'create-organization' | 'users' | 'settings' | 'create-agent' | 'list-agents' | 'agent-details' | 'vulnerability-ftp' | 'vulnerability-kerberos' | 'vulnerability-adcs' | 'vulnerability-groups' | 'list-organizations' | 'organization-details' | 'users-list'; ;
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -115,8 +118,6 @@ export default function DashboardPage() {
   }
 
   
-  
-  // Update the renderMainContent function to include the vulnerability view
   const renderMainContent = () => {
     switch (currentView) {
       case 'vulnerability-ftp':
@@ -124,7 +125,16 @@ export default function DashboardPage() {
 
       case 'vulnerability-kerberos':
         return <KerberosPage />;
+      
+      case 'vulnerability-adcs':
+        return <AdcsPage />;
 
+      case 'vulnerability-groups':
+          return <GroupsPage />;
+      
+      case 'users-list':
+          return <UsersListPage />;
+      
       case 'create-organization':
         return <CreateOrganizationPage />;
 
@@ -185,6 +195,7 @@ export default function DashboardPage() {
           </div>
         ) : null;
       case 'dashboard':
+        return <DashboardOverview />;
       default:
         return (
           <div className="space-y-6">
@@ -275,7 +286,7 @@ return (
             {sidebarExpanded && <span className="ml-3">Dashboard</span>}
           </Button>
           
-          {userData?.role === 'root' && (
+          {(userData?.role === 'root' || userData?.role === 'integrator' || userData?.role === 'admin') && (
             <>
               <div className="organizations-menu-container relative">
                 <Button 
@@ -301,17 +312,19 @@ return (
                   style={{ zIndex: 50 }}
                 >
                   <div className="py-2">
-                    <Button
-                      variant="ghost"
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-[#252525]"
-                      onClick={() => {
-                        setCurrentView('create-organization');
-                        setOrganizationsMenuOpen(false);
-                      }}
-                    >
-                      <PlusCircle size={18} className="mr-2" />
-                      Create Organization
-                    </Button>
+                    {userData?.role === 'root' && (
+                      <Button
+                        variant="ghost"
+                        className="w-full flex items-center px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-[#252525] transition-colors duration-150"
+                        onClick={() => {
+                          setCurrentView('create-organization');
+                          setOrganizationsMenuOpen(false);
+                        }}
+                      >
+                        <PlusCircle size={18} className="mr-2" />
+                        Create Organization
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-[#252525]"
@@ -329,7 +342,7 @@ return (
             </>
           )}
           
-          {(userData?.role === 'root' || userData?.role === 'integrator') && (
+          { userData?.role === 'root' || userData?.role === 'integrator' && (
             <div className="relative agents-menu-container">
                 <Button 
                   variant="ghost" 
@@ -338,7 +351,7 @@ return (
                   aria-expanded={agentsMenuOpen}
                   aria-haspopup="true"
                 >
-                  <Users2 size={20} />
+                  <Shield size={20} />
                   {sidebarExpanded && (
                     <>
                       <span className="ml-3">Agents</span>
@@ -349,20 +362,17 @@ return (
                     </>
                   )}
                 </Button>
+
+                
                 
                 <div 
-                  className={`
-                    absolute ${sidebarExpanded ? 'left-full' : 'left-full'} top-0
-                    w-48 bg-[#1A1A1A] border border-gray-800 rounded-md shadow-lg
-                    transform transition-all duration-200 ease-in-out
-                    ${agentsMenuOpen ? 'translate-x-0 opacity-100 visible' : 'translate-x-1 opacity-0 invisible'}
-                    z-50
-                  `}
+                  className={`absolute ${sidebarExpanded ? 'left-full' : 'left-full'} top-0 w-48 bg-[#1A1A1A] border border-gray-800 rounded-md shadow-lg transform transition-all duration-200 ease-in-out ${agentsMenuOpen ? 'translate-x-0 opacity-100 visible' : 'translate-x-1 opacity-0 invisible'} z-50`}
                   role="menu"
                   aria-orientation="vertical"
                   aria-labelledby="agents-menu-button"
                 >
                   <div className="py-2" role="none">
+                  
                     <Button
                       variant="ghost"
                       className="w-full flex items-center px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-[#252525] transition-colors duration-150"
@@ -375,6 +385,8 @@ return (
                       <PlusCircle size={18} className="mr-2" />
                       Create Agent
                     </Button>
+                  
+                  { userData?.role === 'root' && (
                     <Button
                       variant="ghost"
                       className="w-full flex items-center px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-[#252525] transition-colors duration-150"
@@ -384,28 +396,16 @@ return (
                       }}
                       role="menuitem"
                     >
-                      <Users2 size={18} className="mr-2" />
+                      <Shield size={18} className="mr-2" />
                       List Agents
                     </Button>
+                  )}
                   </div>
                 </div>
-              </div>
+            </div>
           )}
-          <Button 
-            variant="ghost" 
-            className={`flex items-center justify-${sidebarExpanded ? 'start' : 'center'} text-gray-300 hover:text-white hover:bg-[#1A1A1A]`}
-          >
-            <Users size={20} />
-            {sidebarExpanded && <span className="ml-3">Users</span>}
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            className={`flex items-center justify-${sidebarExpanded ? 'start' : 'center'} text-gray-300 hover:text-white hover:bg-[#1A1A1A]`}
-          >
-            <Settings size={20} />
-            {sidebarExpanded && <span className="ml-3">Settings</span>}
-          </Button>
+
+          {/* Vulnerability section - available to all roles */}
           <div className="flex flex-col space-y-2">
             <Button 
               variant="ghost" 
@@ -424,7 +424,37 @@ return (
               <AlertTriangle size={20} />
               {sidebarExpanded && <span className="ml-3">Kerberos Vulnerabilities</span>}
             </Button>
-        </div>
+
+            <Button 
+              variant="ghost" 
+              className={`flex items-center justify-${sidebarExpanded ? 'start' : 'center'} text-gray-300 hover:text-white hover:bg-[#1A1A1A] w-full`}
+              onClick={() => setCurrentView('vulnerability-adcs')}
+            >
+              <AlertTriangle size={20} />
+              {sidebarExpanded && <span className="ml-3">ADCS Vulnerabilities</span>}
+            </Button>
+
+            <Button
+              variant="ghost"
+              className={`w-full justify-start ${currentView === 'vulnerability-groups' ? 'bg-gray-800' : ''}`}
+              onClick={() => setCurrentView('vulnerability-groups')}
+            >
+              <AlertTriangle className="mr-2 h-4 w-4" />
+              {sidebarExpanded && <span className="ml-3">Active Directory Service</span>}
+            </Button>
+
+            {userData?.role === 'root' && (
+            <Button 
+              variant="ghost" 
+              className={`flex items-center justify-${sidebarExpanded ? 'start' : 'center'} text-gray-300 hover:text-white hover:bg-[#1A1A1A]`}
+              onClick={() => setCurrentView('users-list')}
+            >
+              <Users size={20} />
+              {sidebarExpanded && <span className="ml-3">Users</span>}
+            </Button>
+          )}
+
+          </div>
         </div>
       </div>
       

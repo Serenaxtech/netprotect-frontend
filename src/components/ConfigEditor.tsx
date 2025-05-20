@@ -25,9 +25,28 @@ export function ConfigEditor({ agentId, agentName, onClose }: ConfigEditorProps)
   }, [sections, createInitialConfig]);
 
   const handleSectionChange = (index: number, newContent: string) => {
-    const newSections = [...editedSections];
-    newSections[index] = { ...newSections[index], content: newContent };
-    setEditedSections(newSections);
+    if (editedSections[index].name === '[agent]') {
+      // For agent section, only allow editing AUTH-Token line
+      const lines = editedSections[index].content.split('\n');
+      const newLines = newContent.split('\n');
+      const updatedLines = lines.map((line, i) => {
+        if (line.trim().startsWith('AUTH-Token')) {
+          return newLines[i];
+        }
+        return line;
+      });
+      const newSections = [...editedSections];
+      newSections[index] = { 
+        ...newSections[index], 
+        content: updatedLines.join('\n')
+      };
+      setEditedSections(newSections);
+    } else {
+      // For other sections, allow full editing
+      const newSections = [...editedSections];
+      newSections[index] = { ...newSections[index], content: newContent };
+      setEditedSections(newSections);
+    }
   };
 
   const handleSave = async () => {
@@ -77,14 +96,16 @@ export function ConfigEditor({ agentId, agentName, onClose }: ConfigEditorProps)
             <div key={index} className="space-y-2">
               <label className="text-sm font-medium text-gray-400">
                 {section.name}
-                {!section.isEditable && (
-                  <span className="ml-2 text-xs text-yellow-500">(Non-editable)</span>
+                {section.name === '[agent]' && (
+                  <span className="ml-2 text-xs text-yellow-500">
+                    (Only AUTH-Token is editable)
+                  </span>
                 )}
               </label>
               <Textarea
                 value={section.content}
                 onChange={(e) => handleSectionChange(index, e.target.value)}
-                disabled={!section.isEditable}
+                disabled={false} // Remove the disabled condition
                 className="font-mono bg-[#1A1A1A] border-gray-800"
                 rows={section.content.split('\n').length}
               />

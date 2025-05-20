@@ -59,11 +59,63 @@ export const useAgentConfig = (agentId: string, agentName: string) => {
   const createInitialConfig = async () => {
     try {
       setLoading(true);
-      const token = await ConfigApiService.getAgentToken(agentId);
-      const initialConfig = `[agent]\nAgent-ID = ${agentId}\nAgent-Name = ${agentName}\nAUTH-Token = ${token}\n\n[backend-api]\nbase-api = http://localhost:5000\nbase-endpoint = /api/v1/\n\n[proxy]\nproxy-url = None\nproxy-auth = None`;
-      
-      await ConfigApiService.createAgentConfig(agentId, initialConfig);
-      await fetchConfig();
+      try {
+        await ConfigApiService.getAgentConfig(agentId);
+        await fetchConfig();
+        return;
+      } catch (err) {
+        // Config doesn't exist, create with empty token
+        const initialConfig = `[agent]
+Agent-ID = ${agentId}
+Agent-Name = ${agentName}
+AUTH-Token = undefined
+
+[backend-api]
+base-api = http://localhost:5000
+base-endpoint = /api/v1/
+
+[proxy]
+proxy-url = None
+proxy-auth = None
+
+[adlab.local]
+Username = ADLAB\\ldapuser
+Password = UserPass1234!
+LDAP-username = ldapuser@adlab.local
+LDAP-query = (&(objectCategory=computer)(operatingSystem=*Windows*))
+Max-size = 5M
+Num-of-threads = 10
+Spider-depth = 2
+Excluded-shares = PRINT$ ADMIN$ BACKUP
+Extensions = pfx p12 pem key
+Excluded-extensions = zip exe tar
+Content-regex = ((secret|password|credentials|.*passe)\s{0,1}[:=]\S*)
+File-regex = (secret|password|credentials|.*passe)
+LDAP=389
+LDAPS=636
+AUTH-Method=NTLM
+
+[query_get_all_windows_servers]
+filter = (objectCategory=computer)
+attributes = cn, operatingSystem
+scope = subtree
+base=
+
+[query_get_all_users]
+filter = (objectClass=user)
+attributes = sAMAccountName, displayName
+scope =
+base=
+
+[query_get_all_groups]
+filter = (&(objectClass=group)(member=*))
+attributes = sAMAccountName, displayName, description, member, memberOf, whenCreated, whenChanged
+scope = subtree
+base=`;
+        
+        await ConfigApiService.createAgentConfig(agentId, initialConfig);
+        await fetchConfig();
+      }
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
